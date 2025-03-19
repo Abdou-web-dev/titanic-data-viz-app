@@ -9,6 +9,12 @@ router = APIRouter(prefix="/passengers", tags=["Passengers"])
 # API to Upload CSV and Save Data
 @router.post("/upload")
 async def upload_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
+
+     # Clear the existing data in the passengers table
+    db.query(Passenger).delete()
+    db.commit()
+    
+        # Now proceed with uploading the new data
     df = pd.read_csv(file.file)
 
     for _, row in df.iterrows():
@@ -22,6 +28,9 @@ async def upload_csv(file: UploadFile = File(...), db: Session = Depends(get_db)
             siblings_spouses=row["SibSp"],
             parents_children=row["Parch"],
             fare=row["Fare"],
+            ticket=row["Ticket"],  # Adding ticket field
+            cabin=row["Cabin"],  # Adding cabin field (if necessary)
+            embarked=row["Embarked"]  # Adding embarked field
         )
         db.add(passenger)
     
