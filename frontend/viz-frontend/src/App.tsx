@@ -1,35 +1,77 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import { usePassengers } from "./hooks/usePassengers";
+import PassengerTable from "./components/PassengerTable";
+import PassengerGraph from "./components/PassengerGraph";
+import PassengerFilter from "./components/PassengerFilter";
+import ImportPassengersButton from "./components/ImportPassengersButton.tsx";
+import { NiceSpinner } from "./components/NiceSpinner.tsx";
+import "./App.css";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const { passengers: fetchedPassengers = [], loading, refetchPassengers } = usePassengers(); // Default passengers to an empty array if undefined
+  const [passengers, setPassengers] = useState(fetchedPassengers); // Local state for passengers
+  const [filteredPassengers, setFilteredPassengers] = useState(passengers);
+  const [clearData, setClearData] = useState(false); // State to control when to clear the data
+
+  // Update filtered passengers based on selected criteria
+  const handleFilterChange = (filteredData: typeof passengers) => {
+    setFilteredPassengers(filteredData);
+  };
+
+  // Handle clearing passengers data
+  const handleClearData = () => {
+    setPassengers([]); // Clear passengers data from the state
+    setClearData(true); // Set clearData to true
+  };
+
+  useEffect(() => {
+    if (clearData) {
+      // After clearing, reset filtered data as well
+      setFilteredPassengers([]);
+      setClearData(false); // Reset clearData state after clearing the data
+    }
+  }, [clearData]);
+
+  useEffect(() => {
+    // Update filtered passengers when the fetched passengers change
+    setPassengers(fetchedPassengers);
+    setFilteredPassengers(fetchedPassengers);
+  }, [fetchedPassengers]);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="bg-white min-h-screen flex flex-col items-center p-6 font-raleway font-medium">
+      <h1 className="text-3xl font-bold mb-6">Titanic Passenger Data</h1>
+
+      {loading ? (
+        <NiceSpinner />
+      ) : passengers.length ? (
+        <>
+          {/* Render Clear Data button only if passengers exist */}
+          <button
+            onClick={handleClearData}
+            className="bg-red-500 text-white px-4 py-2 rounded my-4 cursor-pointer hover:bg-red-600"
+          >
+            Clear Data
+          </button>
+
+          <PassengerFilter
+            passengers={passengers}
+            onFilterChange={handleFilterChange}
+          />
+          <PassengerTable passengers={passengers} />
+          <PassengerGraph passengers={filteredPassengers} />
+        </>
+      ) : (
+        <div className="text-center">
+          {/* Render message when there are no passengers */}
+          <p className="mb-4">No passenger data available.</p>
+
+          {/* Show ImportPassengersButton only when no passengers */}
+          <ImportPassengersButton refetchPassengers={refetchPassengers} />
+        </div>
+      )}
+    </div>
+  );
 }
 
-export default App
+export default App;
